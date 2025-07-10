@@ -23,6 +23,16 @@
 
     h3 {
       margin: 1rem 0 0.5rem;
+      z-index: 2;
+    }
+
+    .overlay-wrapper {
+      flex: 1;
+      width: 100%;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     .reader-container {
@@ -30,6 +40,7 @@
       width: 90vw;
       max-width: 400px;
       aspect-ratio: 4 / 3;
+      z-index: 1;
     }
 
     #reader {
@@ -38,13 +49,38 @@
       position: relative;
     }
 
-    /* Белая рамка (углы) */
+    /* Затемнение за пределами reader */
+    .overlay-wrapper::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .reader-container::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      box-shadow:
+        0 0 0 10000px rgba(0,0,0,0.6); /* обводка */
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Белые углы */
     .corner {
       position: absolute;
       width: 25px;
       height: 25px;
       border: 4px solid white;
       box-sizing: border-box;
+      z-index: 3;
     }
 
     .tl { top: 0; left: 0; border-right: none; border-bottom: none; }
@@ -52,7 +88,7 @@
     .bl { bottom: 0; left: 0; border-right: none; border-top: none; }
     .br { bottom: 0; right: 0; border-left: none; border-top: none; }
 
-    /* Красная линия по центру */
+    /* Красная линия */
     .scanner-line {
       position: absolute;
       top: 50%;
@@ -62,23 +98,26 @@
       background: red;
       transform: translateY(-50%);
       animation: pulse 2s infinite;
+      z-index: 2;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 0.2; }
+      0%, 100% { opacity: 0.3; }
       50%      { opacity: 1; }
     }
   </style>
 </head>
 <body>
   <h3>Наведите камеру на штрихкод</h3>
-  <div class="reader-container">
-    <div id="reader"></div>
-    <div class="scanner-line"></div>
-    <div class="corner tl"></div>
-    <div class="corner tr"></div>
-    <div class="corner bl"></div>
-    <div class="corner br"></div>
+  <div class="overlay-wrapper">
+    <div class="reader-container">
+      <div id="reader"></div>
+      <div class="scanner-line"></div>
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+    </div>
   </div>
 
   <script>
