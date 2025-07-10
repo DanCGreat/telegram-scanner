@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Сканер штрихкодов</title>
+  <!-- Telegram Web App SDK -->
+  <script async src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body { font-family: sans-serif; padding: 1rem; text-align: center; }
@@ -15,10 +17,11 @@
   <div id="reader"></div>
 
   <script>
-    console.log("📦 Страница загружена. Инициализация сканера...");
+    // Уведомляем Telegram, что WebApp готов
+    window.Telegram.WebApp.ready();
+    alert("📦 WebApp готов. Инициализация сканера...");
 
     const html5QrCode = new Html5Qrcode("reader");
-
     const config = {
       fps: 10,
       qrbox: 250,
@@ -33,34 +36,43 @@
       ]
     };
 
-    html5QrCode.start(
-      { facingMode: "environment" },
-      config,
-      decodedText => {
-        console.log("✅ Код считан:", decodedText);
-        if (window.Telegram?.WebApp?.sendData) {
-          console.log("📤 Отправка в Telegram WebApp...");
-          window.Telegram.WebApp.sendData(decodedText);
-        } else {
-          console.warn("⚠️ Telegram WebApp.sendData недоступен.");
-          alert("Считано: " + decodedText);
+    function startScanner() {
+      html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccess,
+        errorMessage => {
+          // для отладки можно раскомментировать:
+          // console.log("❌ Сбой считывания:", errorMessage);
         }
-        html5QrCode.stop().then(() => {
-          console.log("⏹️ Сканер остановлен после считывания.");
-        }).catch(err => {
-          console.error("❌ Ошибка при остановке сканера:", err);
-        });
-      },
-      errorMessage => {
-        // Можно раскомментировать строку ниже для логирования каждого промаха
-        // console.log("❌ Не удалось считать:", errorMessage);
+      )
+      .then(() => {
+        console.log("🎥 Камера запущена");
+        alert("🎥 Камера запущена, наведите на штрихкод");
+      })
+      .catch(err => {
+        console.error("🚫 Не удалось запустить камеру:", err);
+        alert("Ошибка доступа к камере. Проверьте разрешения.");
+      });
+    }
+
+    function onScanSuccess(decodedText) {
+      console.log("✅ Код считан:", decodedText);
+      alert("✅ Считан штрихкод: " + decodedText);
+
+      if (window.Telegram?.WebApp?.sendData) {
+        console.log("📤 Отправка в Telegram...");
+        window.Telegram.WebApp.sendData(decodedText);
+        alert("📤 Данные отправлены в бота");
+        window.Telegram.WebApp.close();  // закроет WebApp и вернёт в чат
+      } else {
+        console.warn("⚠️ sendData недоступен");
+        alert("⚠️ Не удалось отправить в бота, sendData недоступен");
       }
-    ).then(() => {
-      console.log("🎥 Камера успешно запущена.");
-    }).catch(err => {
-      console.error("🚫 Не удалось запустить камеру:", err);
-      alert("Ошибка доступа к камере. Проверьте разрешения.");
-    });
+    }
+
+    // Стартуем сразу
+    startScanner();
   </script>
 </body>
 </html>
