@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Telegram Scanner</title>
-  <!-- Подгружаем библиотеку html5-qrcode -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body { font-family: sans-serif; padding: 1rem; }
@@ -17,19 +16,31 @@
   <div id="reader"></div>
 
   <script>
-    // Инициализация сканера
     const html5QrCode = new Html5Qrcode("reader");
+
+    const config = {
+      fps: 10,
+      qrbox: 250,
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E
+      ]
+    };
+
     html5QrCode.start(
-      { facingMode: "environment" },  // задняя камера
-      { fps: 10, qrbox: 250 },        // настройки сканирования
+      { facingMode: "environment" },
+      config,
       decodedText => {
-        // как только получен результат — отправляем боту
         window.Telegram.WebApp.sendData(decodedText);
-        html5QrCode.stop();           // останавливаем сканер
+        html5QrCode.stop();
       },
       errorMessage => {
-        // ошибки сканирования можно игнорировать
-        console.log("Scan error:", errorMessage);
+        // можно игнорировать
       }
     ).catch(err => {
       console.error("Не удалось запустить камеру:", err);
