@@ -3,32 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Telegram Scanner</title>
+  <title>Сканер штрихкодов</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    body { font-family: sans-serif; padding: 1rem; }
+    body { font-family: sans-serif; padding: 1rem; text-align: center; }
     #reader { width: 100%; max-width: 400px; margin: auto; }
-    h3 { text-align: center; }
   </style>
 </head>
 <body>
-  <h3>Наведите камеру на штрих‑ или QR‑код</h3>
+  <h3>Наведите камеру на штрихкод</h3>
   <div id="reader"></div>
 
   <script>
+    console.log("📦 Страница загружена. Инициализация сканера...");
+
     const html5QrCode = new Html5Qrcode("reader");
 
     const config = {
       fps: 10,
       qrbox: 250,
       formatsToSupport: [
-        Html5QrcodeSupportedFormats.QR_CODE,
         Html5QrcodeSupportedFormats.CODE_128,
         Html5QrcodeSupportedFormats.CODE_39,
         Html5QrcodeSupportedFormats.EAN_13,
         Html5QrcodeSupportedFormats.EAN_8,
         Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.ITF
       ]
     };
 
@@ -36,14 +37,28 @@
       { facingMode: "environment" },
       config,
       decodedText => {
-        window.Telegram.WebApp.sendData(decodedText);
-        html5QrCode.stop();
+        console.log("✅ Код считан:", decodedText);
+        if (window.Telegram?.WebApp?.sendData) {
+          console.log("📤 Отправка в Telegram WebApp...");
+          window.Telegram.WebApp.sendData(decodedText);
+        } else {
+          console.warn("⚠️ Telegram WebApp.sendData недоступен.");
+          alert("Считано: " + decodedText);
+        }
+        html5QrCode.stop().then(() => {
+          console.log("⏹️ Сканер остановлен после считывания.");
+        }).catch(err => {
+          console.error("❌ Ошибка при остановке сканера:", err);
+        });
       },
       errorMessage => {
-        // можно игнорировать
+        // Можно раскомментировать строку ниже для логирования каждого промаха
+        // console.log("❌ Не удалось считать:", errorMessage);
       }
-    ).catch(err => {
-      console.error("Не удалось запустить камеру:", err);
+    ).then(() => {
+      console.log("🎥 Камера успешно запущена.");
+    }).catch(err => {
+      console.error("🚫 Не удалось запустить камеру:", err);
       alert("Ошибка доступа к камере. Проверьте разрешения.");
     });
   </script>
