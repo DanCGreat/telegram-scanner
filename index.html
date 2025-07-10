@@ -4,53 +4,48 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Сканер штрихкодов</title>
+  <!-- Telegram Web App SDK -->
   <script async src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    html, body {
+    body {
       margin: 0;
       padding: 0;
-      height: 100%;
-      background: #000;
-      overflow: hidden;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      color: white;
       font-family: sans-serif;
+      background-color: #000;
+      color: white;
+      text-align: center;
     }
 
     h3 {
-      margin: 1rem 0;
-      z-index: 2;
+      margin-top: 1rem;
+      font-size: 1.2rem;
     }
 
     #reader-container {
       position: relative;
       width: 100%;
-      max-width: 480px;
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      max-width: 400px;
+      margin: 1rem auto;
+      aspect-ratio: 1/1;
     }
 
     #reader {
       width: 100%;
       height: 100%;
+      background-color: black;
     }
 
     .scanner-overlay {
       position: absolute;
-      width: 80%;
-      max-width: 250px;
-      aspect-ratio: 1 / 1;
-      border: 2px solid rgba(255, 0, 0, 0.4);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 2px solid rgba(255, 0, 0, 0.5);
+      box-sizing: border-box;
       pointer-events: none;
+      overflow: hidden;
     }
 
     .scanner-line {
@@ -60,7 +55,7 @@
       width: 100%;
       height: 2px;
       background: rgba(255, 0, 0, 0.8);
-      animation: scan 2s infinite;
+      animation: scan 2s ease-in-out infinite;
     }
 
     @keyframes scan {
@@ -80,6 +75,7 @@
   </div>
 
   <script>
+    // Telegram WebApp ready
     window.Telegram.WebApp.ready();
 
     const html5QrCode = new Html5Qrcode("reader");
@@ -105,8 +101,14 @@
           window.Telegram.WebApp.sendData(decodedText);
           window.Telegram.WebApp.close();
         }
+      },
+      errorMessage => {
+        // Можно логировать ошибки, если нужно
+        // console.warn(`Scan error: ${errorMessage}`);
       }
-    );
+    ).catch(err => {
+      console.error("Ошибка запуска сканера: ", err);
+    });
   </script>
 </body>
 </html>
