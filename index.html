@@ -28,7 +28,7 @@
       animation: scan 2s linear infinite;
     }
     @keyframes scan {
-      0%   { transform: translateY(0%); }
+      0% { transform: translateY(0%); }
       100% { transform: translateY(100%); }
     }
   </style>
@@ -40,9 +40,11 @@
       <div class="scanner-line"></div>
     </div>
   </div>
-
   <script>
+    // Инициализация Telegram WebApp
     window.Telegram.WebApp.ready();
+
+    // Создаём экземпляр сканера
     const html5QrCode = new Html5Qrcode("reader");
     const config = {
       fps: 10,
@@ -58,22 +60,17 @@
       ]
     };
 
-    function startScanner() {
-      html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        onScanSuccess
-      );
-    }
-
-    function onScanSuccess(decodedText) {
-      if (window.Telegram?.WebApp?.sendData) {
-        window.Telegram.WebApp.sendData(decodedText);
-        window.Telegram.WebApp.close();
+    // Запуск сканера
+    html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      decodedText => {
+        if (window.Telegram.WebApp.sendData) {
+          window.Telegram.WebApp.sendData(decodedText);
+          window.Telegram.WebApp.close();
+        }
       }
-    }
-
-    startScanner();
+    );
   </script>
 </body>
 </html>
