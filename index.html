@@ -2,17 +2,20 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Сканер</title>
-  <script async src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Сканер штрихкодов</title>
   <style>
-    html, body {
+    * {
       margin: 0;
       padding: 0;
-      height: 100vh;
-      background: black;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
       overflow: hidden;
+      background: black;
     }
 
     #scanner-container {
@@ -21,104 +24,62 @@
       height: 100vh;
     }
 
-    #reader {
+    /* Прозрачное окно 16:9 по центру */
+    .scanner-window {
       position: absolute;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 1;
+      width: 80%;
+      aspect-ratio: 16 / 9;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      border: 2px solid #00ff99;
+      border-radius: 10px;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
     }
 
-    .overlay {
+    /* Углы */
+    .corner {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border: 4px solid white;
+      z-index: 3;
+    }
+
+    .corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+    .corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+    .corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+    .corner.br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+    /* Сканирующая линия */
+    .scan-line {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: 100%;
+      height: 3px;
+      background: #00ff99;
+      animation: scan 2s linear infinite;
       z-index: 2;
-      pointer-events: none;
-    }
-
-    .overlay::before {
-      content: "";
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      clip-path: inset(25% 10% 25% 10%);
-    }
-
-    .scan-frame {
-      position: absolute;
-      top: 25%;
-      left: 10%;
-      width: 80%;
-      height: 50%;
-      border: 3px solid #00ff9d;
-      border-radius: 16px;
-      z-index: 3;
-    }
-
-    .scan-line {
-      position: absolute;
-      top: 25%;
-      left: 10%;
-      width: 80%;
-      height: 4px;
-      background: linear-gradient(90deg, transparent, #00ff9d, transparent);
-      animation: scan 2s infinite ease-in-out;
-      z-index: 4;
     }
 
     @keyframes scan {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(100%); }
-      100% { transform: translateY(0); }
+      0% { top: 0; }
+      100% { top: 100%; }
     }
   </style>
 </head>
 <body>
   <div id="scanner-container">
-    <div id="reader"></div>
-
-    <!-- затемнение -->
-    <div class="overlay"></div>
-
-    <!-- рамка -->
-    <div class="scan-frame"></div>
-
-    <!-- линия -->
-    <div class="scan-line"></div>
+    <div class="scanner-window">
+      <div class="scan-line"></div>
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+    </div>
   </div>
-
-  <script>
-    window.Telegram.WebApp.ready();
-
-    const html5QrCode = new Html5Qrcode("reader");
-    const config = {
-      fps: 10,
-      qrbox: { width: 300, height: 300 },
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.ITF
-      ]
-    };
-
-    html5QrCode.start(
-      { facingMode: "environment" },
-      config,
-      decodedText => {
-        if (window.Telegram.WebApp.sendData) {
-          window.Telegram.WebApp.sendData(decodedText);
-          window.Telegram.WebApp.close();
-        }
-      }
-    );
-  </script>
 </body>
 </html>
