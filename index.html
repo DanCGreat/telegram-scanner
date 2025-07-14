@@ -4,112 +4,100 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Сканер</title>
+  <!-- Подключаем Telegram Web App SDK -->
   <script async src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- Подключаем HTML5 QR Code библиотеку -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
+    /* Сброс стилей */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      background: black;
+      width: 100%; height: 100%; overflow: hidden; background: transparent;
+      display: flex; justify-content: center; align-items: center;
+      font-family: sans-serif;
+    }
+    /* Контейнер сканера */
+    #scanner-container {
+      position: relative; width: 100vw; height: 100vh;
+    }
+    /* Камера */
+    #reader {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%; object-fit: cover;
+      background: transparent; z-index: 1;
+    }
+    /* Красная рамка 16:9 */
+    .scan-frame {
+      position: absolute; top: 50%; left: 50%;
+      width: 80vw; aspect-ratio: 16/9;
+      transform: translate(-50%, -50%);
+      border: 4px solid red; border-radius: 8px;
+      background: transparent; z-index: 2;
       overflow: hidden;
     }
-
-    #scanner-container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-    }
-
-    #reader {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 1;
-    }
-
-    /* Убираем затемнение */
-    .overlay {
-      display: none;
-    }
-
-    /* Красная рамка сканирования */
-    .scan-frame {
-      position: absolute;
-      top: 25%;
-      left: 10%;
-      width: 80%;
-      height: 50%;
-      border: 3px solid red;
-      border-radius: 16px;
-      z-index: 3;
-      /* прозрачный фон внутри рамки */
-      background: transparent;
-    }
-
-    /* Пульсирующая линия по центру рамки */
+    /* Пульсирующая линия */
     .scan-line {
-      position: absolute;
-      top: 50%;
-      left: 10%;
-      width: 80%;
-      height: 4px;
-      background: red;
-      transform: translateY(-50%);
-      animation: pulse 1.5s infinite ease-in-out;
-      z-index: 4;
-      opacity: 0.5;
+      position: absolute; top: 50%; left: 50%;
+      width: 80vw; height: 4px;
+      transform: translate(-50%, -50%);
+      background: red; opacity: 0.6;
+      animation: pulse 1.5s ease-in-out infinite;
+      z-index: 3;
     }
-
     @keyframes pulse {
-      0%, 100% { opacity: 0.2; }
-      50%      { opacity: 1; }
+      0%,100% { opacity: 0.2; }
+      50% { opacity: 1; }
     }
   </style>
 </head>
 <body>
   <div id="scanner-container">
     <div id="reader"></div>
-
-    <!-- затемнение отключено -->
-    <div class="overlay"></div>
-
-    <!-- красная рамка -->
     <div class="scan-frame"></div>
-
-    <!-- пульсирующая линия -->
     <div class="scan-line"></div>
   </div>
 
   <script>
-    window.Telegram.WebApp.ready();
+    // Telegram WebApp ready
+    window.Telegram?.WebApp?.ready();
 
+    // Вычисление зоны сканирования 16:9
+    function qrboxSize() {
+      const width = Math.floor(window.innerWidth * 0.8);
+      const height = Math.floor(width * 9 / 16);
+      return { width, height };
+    }
+
+    // Инициализация сканера
     const html5QrCode = new Html5Qrcode("reader");
-    const config = {
-      fps: 10,
-      qrbox: { width: 300, height: 300 },
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.ITF
-      ]
-    };
-
     html5QrCode.start(
       { facingMode: "environment" },
-      config,
+      {
+        fps: 10,
+        qrbox: qrboxSize(),
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.ITF
+        ]
+      },
       decodedText => {
+        // Отправка данных в бота
         if (window.Telegram.WebApp.sendData) {
           window.Telegram.WebApp.sendData(decodedText);
           window.Telegram.WebApp.close();
         }
+        // Останавливаем сканер
+        html5QrCode.stop();
+      },
+      errorMessage => {
+        // Игнорируем ошибки сканирования
       }
-    );
+    ).catch(err => console.error("Ошибка инициализации камеры:", err));
   </script>
 </body>
 </html>
