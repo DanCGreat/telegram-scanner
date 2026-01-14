@@ -105,24 +105,36 @@
       return { width: w, height: h };
     }
     const html5QrCode = new Html5Qrcode("reader");
-    function playBeep() {
+    let audioCtx = null;
+    function initAudio() {
+      if (audioCtx) return;
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        audioCtx = new AudioContext();
+      } catch (e) {}
+    }
+    function playBeep() {
+      try {
+        if (!audioCtx) initAudio();
+        if (!audioCtx) return;
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
         osc.type = "sine";
         osc.frequency.value = 1200;
         gain.gain.value = 0.08;
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(audioCtx.destination);
         osc.start();
         setTimeout(() => {
           osc.stop();
-          ctx.close();
         }, 80);
       } catch (e) {}
     }
+    document.addEventListener("touchstart", initAudio, { once: true });
+    document.addEventListener("click", initAudio, { once: true });
     html5QrCode.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: qrboxSize(), formatsToSupport: [
