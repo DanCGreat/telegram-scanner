@@ -59,6 +59,7 @@
     }
 
     #reader__scan_region {
+      display: none !important;
       border: 0 !important;
       box-shadow: none !important;
       outline: 0 !important;
@@ -66,6 +67,7 @@
     }
 
     #reader__scan_region * {
+      display: none !important;
       border: 0 !important;
       box-shadow: none !important;
       outline: 0 !important;
@@ -73,16 +75,7 @@
     }
 
     .shade {
-      position: absolute;
-      inset: 0;
-      z-index: 2;
-      pointer-events: none;
-      background: linear-gradient(to bottom,
-        rgba(6, 8, 15, 0.86) 0%,
-        rgba(6, 8, 15, 0.25) 22%,
-        rgba(6, 8, 15, 0.14) 48%,
-        rgba(6, 8, 15, 0.25) 74%,
-        rgba(6, 8, 15, 0.86) 100%);
+      display: none;
     }
 
     .scan-wrap {
@@ -93,6 +86,16 @@
       height: var(--frame-h);
       transform: translate(-50%, -50%);
       z-index: 3;
+      pointer-events: none;
+    }
+
+    .scan-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      box-shadow: 0 0 0 200vmax rgba(6, 8, 15, 0.62);
+      border-radius: 14px;
+      z-index: -1;
       pointer-events: none;
     }
 
@@ -464,6 +467,9 @@
   </script>
 </body>
 </html>
+
+
+
 
 
 
