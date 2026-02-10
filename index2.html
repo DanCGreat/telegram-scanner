@@ -8,18 +8,14 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     :root {
-      --bg-0: #06080f;
-      --bg-1: #0d1321;
-      --bg-2: #15233a;
-      --accent: #00d084;
-      --accent-2: #18a0fb;
-      --danger: #ff4d4f;
       --text: #ecf2ff;
-      --muted: #9aa7bf;
+      --muted: #a9b7d1;
+      --accent: #15d08a;
       --glass: rgba(11, 19, 34, 0.62);
       --glass-border: rgba(255, 255, 255, 0.16);
-      --shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
-      --radius: 16px;
+      --shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+      --frame-w: min(88vw, 560px);
+      --frame-h: calc(var(--frame-w) * 9 / 16);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,7 +26,7 @@
       overflow: hidden;
       font-family: "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
       color: var(--text);
-      background: radial-gradient(130% 95% at 10% 0%, #1d3358 0%, var(--bg-1) 45%, var(--bg-0) 100%);
+      background: radial-gradient(130% 95% at 10% 0%, #1d3358 0%, #0d1321 45%, #06080f 100%);
     }
 
     #app {
@@ -38,7 +34,6 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      isolation: isolate;
     }
 
     #reader {
@@ -52,74 +47,84 @@
       object-fit: cover !important;
       width: 100% !important;
       height: 100% !important;
-      filter: saturate(1.05) contrast(1.02);
     }
 
+    /* Убираем встроенные слои/рамки html5-qrcode */
     #reader__dashboard,
     #reader__status_span,
-    #reader__scan_region img,
-    #reader__scan_region svg {
+    #reader__scan_region > img,
+    #reader__scan_region > svg,
+    .qr-shaded-region {
       display: none !important;
+    }
+
+    #reader__scan_region {
+      border: 0 !important;
+      box-shadow: none !important;
+      outline: 0 !important;
+      background: transparent !important;
     }
 
     .shade {
       position: absolute;
       inset: 0;
       z-index: 2;
-      background:
-        linear-gradient(to bottom, rgba(6, 8, 15, 0.86) 0%, rgba(6, 8, 15, 0.24) 20%, rgba(6, 8, 15, 0.12) 46%, rgba(6, 8, 15, 0.24) 70%, rgba(6, 8, 15, 0.84) 100%);
       pointer-events: none;
+      background: linear-gradient(to bottom,
+        rgba(6, 8, 15, 0.86) 0%,
+        rgba(6, 8, 15, 0.25) 22%,
+        rgba(6, 8, 15, 0.14) 48%,
+        rgba(6, 8, 15, 0.25) 74%,
+        rgba(6, 8, 15, 0.86) 100%);
     }
 
-    .beam-wrap {
+    .scan-wrap {
       position: absolute;
       left: 50%;
       top: 50%;
-      width: min(90vw, 560px);
-      aspect-ratio: 16 / 9;
+      width: var(--frame-w);
+      height: var(--frame-h);
       transform: translate(-50%, -50%);
       z-index: 3;
       pointer-events: none;
     }
 
-    .beam-frame {
+    .scan-frame {
+      position: relative;
       width: 100%;
       height: 100%;
-      border-radius: 18px;
-      border: 2px solid rgba(255, 255, 255, 0.28);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 0 0 1px rgba(0, 208, 132, 0.25), 0 12px 44px rgba(0, 0, 0, 0.45);
-      position: relative;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      border-radius: 14px;
       overflow: hidden;
-      background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 45%);
+      background: rgba(255, 255, 255, 0.02);
     }
 
-    .beam-frame::before {
+    .scan-frame::before {
       content: "";
       position: absolute;
       left: 0;
       right: 0;
       top: 50%;
-      height: 3px;
+      height: 2px;
       transform: translateY(-50%);
-      background: linear-gradient(90deg, transparent 0%, rgba(0, 208, 132, 0.28) 12%, var(--accent) 52%, rgba(24, 160, 251, 0.9) 85%, transparent 100%);
-      box-shadow: 0 0 18px rgba(0, 208, 132, 0.55);
-      animation: pulse 1.4s ease-in-out infinite;
+      background: linear-gradient(90deg, transparent 0%, rgba(21, 208, 138, 0.2) 10%, var(--accent) 50%, rgba(21, 208, 138, 0.2) 90%, transparent 100%);
+      box-shadow: 0 0 10px rgba(21, 208, 138, 0.6);
+      animation: pulse 1.3s ease-in-out infinite;
     }
 
     .corner {
       position: absolute;
-      width: 30px;
-      height: 30px;
-      border-color: #e8f2ff;
-      border-style: solid;
-      border-width: 0;
-      opacity: 0.92;
+      width: 26px;
+      height: 26px;
+      border: 4px solid #ffffff;
+      border-radius: 3px;
+      opacity: 0.95;
     }
 
-    .corner.tl { top: 9px; left: 9px; border-top-width: 4px; border-left-width: 4px; border-radius: 10px 0 0 0; }
-    .corner.tr { top: 9px; right: 9px; border-top-width: 4px; border-right-width: 4px; border-radius: 0 10px 0 0; }
-    .corner.bl { bottom: 9px; left: 9px; border-bottom-width: 4px; border-left-width: 4px; border-radius: 0 0 0 10px; }
-    .corner.br { bottom: 9px; right: 9px; border-bottom-width: 4px; border-right-width: 4px; border-radius: 0 0 10px 0; }
+    .corner.tl { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+    .corner.tr { top: 8px; right: 8px; border-left: 0; border-bottom: 0; }
+    .corner.bl { bottom: 8px; left: 8px; border-right: 0; border-top: 0; }
+    .corner.br { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
 
     .panel-top {
       position: absolute;
@@ -128,7 +133,6 @@
       right: 12px;
       z-index: 4;
       display: flex;
-      align-items: center;
       justify-content: space-between;
       gap: 10px;
     }
@@ -144,8 +148,10 @@
       backdrop-filter: blur(8px);
       box-shadow: var(--shadow);
       font-size: 14px;
-      line-height: 1;
       white-space: nowrap;
+      max-width: 70vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .dot {
@@ -153,7 +159,7 @@
       height: 9px;
       border-radius: 50%;
       background: var(--accent);
-      box-shadow: 0 0 0 6px rgba(0, 208, 132, 0.22);
+      box-shadow: 0 0 0 6px rgba(21, 208, 138, 0.22);
       animation: ping 1.6s ease-out infinite;
     }
 
@@ -170,7 +176,7 @@
     }
 
     .hint {
-      border-radius: var(--radius);
+      border-radius: 14px;
       border: 1px solid var(--glass-border);
       background: var(--glass);
       backdrop-filter: blur(8px);
@@ -178,23 +184,10 @@
       box-shadow: var(--shadow);
     }
 
-    .hint-title {
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-      margin-bottom: 6px;
-    }
+    .hint-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .hint-sub { font-size: 12px; color: var(--muted); line-height: 1.35; }
 
-    .hint-sub {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.35;
-    }
-
-    .actions {
-      display: grid;
-      gap: 8px;
-    }
+    .actions { display: grid; gap: 8px; }
 
     .btn {
       border: 1px solid var(--glass-border);
@@ -202,23 +195,23 @@
       color: var(--text);
       border-radius: 12px;
       padding: 10px 12px;
-      min-width: 118px;
+      min-width: 138px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       backdrop-filter: blur(8px);
       box-shadow: var(--shadow);
-      transition: transform .15s ease, border-color .15s ease, background .15s ease;
     }
 
-    .btn:hover { transform: translateY(-1px); border-color: rgba(255, 255, 255, 0.32); }
-    .btn:active { transform: translateY(0); }
-    .btn.on { border-color: rgba(0, 208, 132, 0.7); background: rgba(0, 208, 132, 0.16); }
+    .btn.on {
+      border-color: rgba(21, 208, 138, 0.8);
+      background: rgba(21, 208, 138, 0.18);
+    }
 
     .toast {
       position: absolute;
       left: 50%;
-      top: calc(50% + min(90vw, 560px) * 0.32);
+      top: calc(50% + var(--frame-h) * 0.42);
       transform: translateX(-50%);
       z-index: 5;
       border: 1px solid var(--glass-border);
@@ -227,22 +220,21 @@
       border-radius: 12px;
       padding: 8px 12px;
       font-size: 13px;
-      color: #d7e9ff;
       opacity: 0;
-      pointer-events: none;
       transition: opacity .2s ease;
+      pointer-events: none;
     }
 
     .toast.show { opacity: 1; }
 
     @keyframes ping {
-      0% { box-shadow: 0 0 0 0 rgba(0, 208, 132, 0.35); }
-      70% { box-shadow: 0 0 0 10px rgba(0, 208, 132, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(0, 208, 132, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(21, 208, 138, 0.35); }
+      70% { box-shadow: 0 0 0 10px rgba(21, 208, 138, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(21, 208, 138, 0); }
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: .38; }
+      0%, 100% { opacity: .35; }
       50% { opacity: 1; }
     }
 
@@ -258,8 +250,8 @@
     <div id="reader"></div>
     <div class="shade"></div>
 
-    <div class="beam-wrap">
-      <div class="beam-frame">
+    <div class="scan-wrap">
+      <div class="scan-frame">
         <span class="corner tl"></span>
         <span class="corner tr"></span>
         <span class="corner bl"></span>
@@ -300,8 +292,6 @@
     let audioCtx = null;
     let torchOn = false;
 
-
-
     function setStatus(text) {
       statusEl.textContent = text;
     }
@@ -317,6 +307,12 @@
       const width = Math.floor(maxW);
       const height = Math.floor(width / (16 / 9));
       return { width, height };
+    }
+
+    function applyFrameSize() {
+      const box = qrboxSize();
+      document.documentElement.style.setProperty("--frame-w", `${box.width}px`);
+      document.documentElement.style.setProperty("--frame-h", `${box.height}px`);
     }
 
     function initAudio() {
@@ -395,6 +391,9 @@
     document.addEventListener("click", initAudio, { once: true });
     flashBtn.addEventListener("click", toggleTorch);
     closeBtn.addEventListener("click", closeScanner);
+    window.addEventListener("resize", applyFrameSize);
+
+    applyFrameSize();
 
     html5QrCode.start(
       { facingMode: "environment" },
@@ -424,5 +423,3 @@
   </script>
 </body>
 </html>
-
-
