@@ -310,9 +310,9 @@
     }
 
     function qrboxSize() {
-      const maxW = Math.min(window.innerWidth * 0.88, 560);
-      const width = Math.floor(maxW);
-      const height = Math.floor(width / (16 / 9));
+      const width = Math.floor(Math.min(window.innerWidth * 0.88, 560));
+      // Более удобная зона для 1D-штрихкодов, особенно на iPhone.
+      const height = Math.floor(Math.min(width * 0.5, 230));
       return { width, height };
     }
 
@@ -402,10 +402,32 @@
 
     applyFrameSize();
 
-    html5QrCode.start(
-      { facingMode: "environment" },
-      {
-        fps: 12,
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    }
+
+    function pickPreferredCamera(cameras) {
+      if (!cameras || cameras.length === 0) return null;
+
+      const scored = cameras.map((c) => {
+        const label = (c.label || "").toLowerCase();
+        let score = 0;
+
+        if (label.includes("back") || label.includes("rear") || label.includes("environment")) score += 30;
+        if (label.includes("wide") || label.includes("main") || label.includes("1x")) score += 18;
+        if (label.includes("tele") || label.includes("zoom")) score += 10;
+        if (label.includes("ultra") || label.includes("0.5") || label.includes("macro")) score -= 25;
+
+        return { cam: c, score };
+      }).sort((a, b) => b.score - a.score);
+
+      return scored[0].cam;
+    }
+
+    async function startScanner() {
+      const config = {
+        fps: isIOS() ? 10 : 12,
         qrbox: qrboxSize(),
         aspectRatio: 16 / 9,
         formatsToSupport: [
@@ -417,18 +439,37 @@
           Html5QrcodeSupportedFormats.UPC_E,
           Html5QrcodeSupportedFormats.ITF
         ]
-      },
-      onScan,
-      () => {}
-    ).then(() => {
-      setStatus("Сканер готов");
-    }).catch((err) => {
-      console.error(err);
-      setStatus("Ошибка запуска камеры");
-      showToast("Доступ к камере не получен");
-    });
+      };
+
+      try {
+        if (isIOS()) {
+          const cameras = await Html5Qrcode.getCameras();
+          const preferred = pickPreferredCamera(cameras);
+
+          if (preferred?.id) {
+            await html5QrCode.start({ deviceId: { exact: preferred.id } }, config, onScan, () => {});
+          } else {
+            await html5QrCode.start({ facingMode: "environment" }, config, onScan, () => {});
+          }
+        } else {
+          // Android: оставляем проверенный путь без выбора deviceId.
+          await html5QrCode.start({ facingMode: "environment" }, config, onScan, () => {});
+        }
+
+        setStatus("Сканер готов");
+      } catch (err) {
+        console.error(err);
+        setStatus("Ошибка запуска камеры");
+        showToast("Доступ к камере не получен");
+      }
+    }
+
+    startScanner();
   </script>
 </body>
 </html>
+
+
+
 
 
