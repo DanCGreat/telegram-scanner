@@ -279,7 +279,7 @@
       </div>
       <div class="actions">
         <button id="flash-btn" class="btn" type="button">Фонарик: выкл</button>
-        <button id="close-btn" class="btn" type="button">Закрыть</button>
+        <button id="close-btn" class="btn" type="button">Вернуться в чат</button>
       </div>
     </div>
 
@@ -300,15 +300,7 @@
     let audioCtx = null;
     let torchOn = false;
 
-    const DEBOUNCE_MS = 120;
-    const THROTTLE_MS = 700;
-    const DEDUP_WINDOW_MS = 2500;
 
-    let pendingScanTimer = null;
-    let pendingPayload = "";
-    let lastSentPayload = "";
-    let lastSentAt = 0;
-    let lastEmitAt = 0;
 
     function setStatus(text) {
       statusEl.textContent = text;
@@ -380,20 +372,11 @@
       }
     }
 
-    function sendScan(payload) {
+    function onScan(decodedText) {
+      const payload = (decodedText || "").trim();
+      if (!payload) return;
       if (!window.Telegram?.WebApp?.sendData) {
         setStatus("Ошибка: sendData недоступен");
-        return;
-      }
-
-      const now = Date.now();
-
-      if (now - lastEmitAt < THROTTLE_MS) {
-        return;
-      }
-
-      if (payload === lastSentPayload && (now - lastSentAt) < DEDUP_WINDOW_MS) {
-        setStatus("Дубликат пропущен");
         return;
       }
 
@@ -403,22 +386,9 @@
       lastCodeBadge.textContent = payload.length > 22 ? `${payload.slice(0, 22)}...` : payload;
       showToast("Отправлено");
 
-      lastSentPayload = payload;
-      lastSentAt = now;
-      lastEmitAt = now;
-    }
-
-    function onScan(decodedText) {
-      const payload = (decodedText || "").trim();
-      if (!payload) return;
-
-      pendingPayload = payload;
-      if (pendingScanTimer) {
-        clearTimeout(pendingScanTimer);
-      }
-      pendingScanTimer = setTimeout(() => {
-        sendScan(pendingPayload);
-      }, DEBOUNCE_MS);
+      setTimeout(() => {
+        closeScanner();
+      }, 300);
     }
 
     document.addEventListener("touchstart", initAudio, { once: true });
@@ -454,4 +424,5 @@
   </script>
 </body>
 </html>
+
 
