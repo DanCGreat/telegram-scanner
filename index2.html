@@ -311,8 +311,8 @@
 
     function qrboxSize() {
       const width = Math.floor(Math.min(window.innerWidth * 0.88, 560));
-      // Более удобная зона для 1D-штрихкодов, особенно на iPhone.
-      const height = Math.floor(Math.min(width * 0.5, 230));
+      // 1D barcode-friendly scan region; less vertical noise on iPhone.
+      const height = Math.floor(Math.min(width * 0.48, 220));
       return { width, height };
     }
 
@@ -402,34 +402,32 @@
 
     applyFrameSize();
 
+    function stripLibraryOverlay() {
+      const reader = document.getElementById("reader");
+      if (!reader) return;
+
+      const nodes = reader.querySelectorAll("div, span, canvas, svg");
+      nodes.forEach((el) => {
+        if (el.id === "reader__dashboard" || el.closest("#reader__dashboard")) return;
+        el.style.border = "0";
+        el.style.boxShadow = "none";
+        el.style.outline = "none";
+        if (el.id === "reader__scan_region" || String(el.className).includes("qr-")) {
+          el.style.background = "transparent";
+          el.style.backgroundColor = "transparent";
+        }
+      });
+    }
+
     function isIOS() {
       return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    }
-
-    function pickPreferredCamera(cameras) {
-      if (!cameras || cameras.length === 0) return null;
-
-      const scored = cameras.map((c) => {
-        const label = (c.label || "").toLowerCase();
-        let score = 0;
-
-        if (label.includes("back") || label.includes("rear") || label.includes("environment")) score += 30;
-        if (label.includes("wide") || label.includes("main") || label.includes("1x")) score += 18;
-        if (label.includes("tele") || label.includes("zoom")) score += 10;
-        if (label.includes("ultra") || label.includes("0.5") || label.includes("macro")) score -= 25;
-
-        return { cam: c, score };
-      }).sort((a, b) => b.score - a.score);
-
-      return scored[0].cam;
     }
 
     async function startScanner() {
       const config = {
         fps: isIOS() ? 10 : 12,
         qrbox: qrboxSize(),
-        aspectRatio: 16 / 9,
         formatsToSupport: [
           Html5QrcodeSupportedFormats.CODE_128,
           Html5QrcodeSupportedFormats.CODE_39,
@@ -442,26 +440,24 @@
       };
 
       try {
-        if (isIOS()) {
-          const cameras = await Html5Qrcode.getCameras();
-          const preferred = pickPreferredCamera(cameras);
-
-          if (preferred?.id) {
-            await html5QrCode.start({ deviceId: { exact: preferred.id } }, config, onScan, () => {});
-          } else {
-            await html5QrCode.start({ facingMode: "environment" }, config, onScan, () => {});
-          }
-        } else {
-          // Android: оставляем проверенный путь без выбора deviceId.
-          await html5QrCode.start({ facingMode: "environment" }, config, onScan, () => {});
+        await html5QrCode.start({ facingMode: "environment" }, config, onScan, () => {});
+      } catch (e1) {
+        try {
+          const cams = await Html5Qrcode.getCameras();
+          if (!cams || !cams.length) throw e1;
+          await html5QrCode.start({ deviceId: { exact: cams[0].id } }, config, onScan, () => {});
+        } catch (e2) {
+          console.error(e2);
+          setStatus("Ошибка запуска камеры");
+          showToast("Доступ к камере не получен");
+          return;
         }
-
-        setStatus("Сканер готов");
-      } catch (err) {
-        console.error(err);
-        setStatus("Ошибка запуска камеры");
-        showToast("Доступ к камере не получен");
       }
+
+      stripLibraryOverlay();
+      setTimeout(stripLibraryOverlay, 250);
+      setTimeout(stripLibraryOverlay, 900);
+      setStatus("Сканер готов");
     }
 
     startScanner();
